@@ -4,3 +4,4 @@ __pycache__/
 .venv/
 *.xlsx
 .DS_Store
+pipeline/.cache.json

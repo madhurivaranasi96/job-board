@@ -1,5 +1,1 @@
-ats-scrapers[parquet]
-openpyxl
-httpx
-pyarrow
-pandas
+# Job pipeline uses the Python standard library only (urllib, json, re, html).

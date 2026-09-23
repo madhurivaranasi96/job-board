@@ -29,11 +29,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -s requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run job scraper
-        run: |
-          python search_jobs.py
+      - name: Fetch, normalize, match
+        run: python search_jobs.py
 
       - name: Commit updated job list
         run: |

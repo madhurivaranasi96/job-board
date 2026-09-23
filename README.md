@@ -1,62 +1,48 @@
-# Software Jobs Board
+# Rolefit — personal job search
 
-Public web application to browse, search, and filter recent software engineering jobs (.NET, Angular, Full-Stack, AI, and related roles).
+Public job-search board for **Madhuri Varanasi**. It scores live software roles against a resume-derived profile, flags visa / sponsorship language when the posting actually says so, and tracks applications in the browser.
 
-**Repository → GitHub Pages → Public HTTPS URL**
+**Live site:** https://madhurivaranasi96.github.io/job-board/
 
-## Live Website
+## What it does
 
-After enabling GitHub Pages (Settings → Pages → Source: Deploy from branch `main` / folder `/docs`):
+- Pulls recent roles from public ATS endpoints (Greenhouse, Lever, Ashby) and public job APIs (Remotive, Arbeitnow, Jobicy, RemoteOK, Himalayas, The Muse)
+- Deduplicates by company + title + location + job id / URL
+- Classifies visa status from the posting text only (`Sponsorship Available`, `Likely`, `Unknown`, `No Sponsorship`, `Existing authorization required`, `Not applicable / remote`)
+- Scores each role against a centralized profile (skills, title, seniority, domain, location, sponsorship)
+- Filters: country, region (including Remote USA / Europe / UK / Canada / APAC / India / anywhere), city, arrangement, visa, experience, title, technology, industry, job type, posted date, salary
+- Application tracker (Saved → Offer) in `localStorage`
 
-**https://madhurivaranasi96.github.io/job-board/**
+The public site never includes a resume file, phone number, or email.
 
-## Features
+## How jobs update
 
-- Browse latest jobs (auto-refreshed daily)
-- Full-text search
-- Filters: Remote, Visa/Sponsorship, Country
-- Sort by date / company / title
-- Job detail modal with description and original Apply URL
-- Mark jobs as Applied / Opened / Skipped (stored in browser under your display name)
-- “My Applied” view retains marks even if the job leaves the latest 7-day feed
+GitHub Actions runs `search_jobs.py` daily (09:00 IST) and on manual dispatch:
 
-No login is required to browse or search. A local display name is only needed when marking Applied status.
+1. FETCH public sources (one failed source does not stop the run)
+2. NORMALIZE locations, dates, salary, technologies
+3. DEDUPLICATE
+4. RELEVANCE FILTER (software / .NET / Angular / full-stack / AI-adjacent titles)
+5. VISA DETECTION (regex / keywords; never fabricated)
+6. PROFILE MATCHING (deterministic weights)
+7. SAVE `docs/jobs.json`
+8. GitHub Pages serves `docs/`
 
-## How jobs are updated
+Manual run: **Actions → Update Job List → Run workflow**
 
-GitHub Actions runs `search_jobs.py` on a schedule (and on manual trigger).
-
-It:
-
-1. Pulls recent postings from preferred ATS sources
-2. Filters to software / .NET / Angular / AI–related titles
-3. Writes `docs/jobs.json`
-4. Commits the file so the live site updates automatically
-
-## Manual trigger
-
-Actions → **Update Job List** → Run workflow
-
-## Local development
-
-```bash
-# Serve the site
-cd docs && python -m http.server 8080
-# Open http://localhost:8080
-```
-
-To regenerate jobs (requires network + `pip install -r requirements.txt`):
+## Local
 
 ```bash
 python search_jobs.py
+cd docs && python -m http.server 8080
 ```
+
+## Visa detection
+
+Status is assigned only from evidence in the posting. If nothing matches, the UI shows **Visa sponsorship: Unknown** and quotes nothing. Apply always opens the original employer URL.
 
 ## Notes
 
-- Visa detection is text-based only; always verify on the employer site.
-- Applied status is stored in the browser (`localStorage`). Clearing site data clears marks.
-- For multi-device sync you would need a backend (e.g. Supabase); this version stays free and static.
-
-## Credits
-
-Inspired by [saipisupati-appsec/Manual_apply](https://github.com/saipisupati-appsec/Manual_apply).
+- Visa / salary / experience fields are only as good as the public posting.
+- Marketplace listings (e.g. agencies that name many stacks) can inflate technology overlap.
+- Tracking is per-browser. Clearing site data clears marks.
