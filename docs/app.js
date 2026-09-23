@@ -332,8 +332,6 @@ function dashboard(jobs) {
     ["Remote", active.filter((j) => j.workArrangement === "remote").length, "#/remote"],
     ["Saved", state.saved.length, "#/saved"],
     ["Applied", apps.filter((a) => a.status === "applied" || (a.status || "").includes("interview") || a.status === "offer").length, "#/applications"],
-    ["Interviews", apps.filter((a) => (a.status || "").includes("interview")).length, "#/applications"],
-    ["Offers", apps.filter((a) => a.status === "offer").length, "#/applications"],
     ["Added today", active.filter((j) => (j.postedAt || "").startsWith(today) || (j.firstDiscovered || "").startsWith(today)).length, ""],
     ["Closed", jobs.filter((j) => j.status === "closed").length, ""],
   ];
@@ -355,47 +353,49 @@ function listPage(title, lede, path, jobs) {
   const list = sortJobs(applyFilters(presetList(path, jobs)));
   return `<header><h1>${title}</h1><p class="lede">${lede}</p>${state.updatedAt ? `<p class="meta">Feed updated ${escapeHtml(new Date(state.updatedAt).toUTCString())}</p>` : ""}</header>
     ${filterBar(jobs)}
-    <p class="meta">${list.length} roles</p>
-    <div class="cards">${list.map(jobCard).join("") || empty("No roles match these filters")}</div>`;
+    <p class="meta">${list.length} role${list.length === 1 ? "" : "s"}</p>
+    <div class="cards">${list.map(jobCard).join("") || empty("No matching roles")}</div>`;
 }
 
 function applicationsPage(jobs) {
-  const ids = [...new Set([...Object.keys(state.applications), ...state.saved])];
-  const rows = ids.map((id) => {
-    const job = jobs.find((j) => j.id === id);
-    const rec = state.applications[id];
-    const status = rec?.status || (state.saved.includes(id) ? "saved" : null);
-    return { id, job, rec, status };
-  }).filter((r) => r.status);
-  return `<header><h1>Applications</h1><p class="lede">Tracking stays in this browser. Nothing is uploaded.</p></header>
-    <div class="cards">${rows.map((r) => `<article class="card">
-      <div class="head"><div><h3>${escapeHtml(r.job?.title || "Role no longer in feed")}</h3>
-      <p class="co">${escapeHtml(r.job?.company || "")} ${r.rec?.appliedAt ? " · Applied " + escapeHtml(r.rec.appliedAt) : ""}</p>
-      ${r.rec?.notes ? `<p>${escapeHtml(r.rec.notes)}</p>` : ""}</div>
-      <span class="chip visa">${escapeHtml((STATUSES.find((s) => s[0] === r.status) || [r.status, r.status])[1])}</span></div>
-      ${r.job ? `<div class="actions"><button class="btn btn-secondary open" data-id="${r.job.id}">Open</button></div>` : ""}
-    </article>`).join("") || empty("Nothing tracked yet")}</div>`;
+  const byId = Object.fromEntries(jobs.map((j) => [j.id, j]));
+  const rows = Object.values(state.applications)
+    .map((a) => ({ ...a, job: byId[a.jobId] }))
+    .filter((a) => a.job)
+    .sort((a, b) => (b.appliedAt || "").localeCompare(a.appliedAt || ""));
+  if (!rows.length) return empty("No applications tracked yet");
+  return `<header><h1>Applications</h1><p class="lede">Status is stored in this browser only.</p></header>
+    <div class="cards">${rows.map((a) => {
+      const job = a.job;
+      return `<article class="card">
+        <div class="head"><div><h3>${escapeHtml(job.title)}</h3><p class="co">${escapeHtml(job.company)}</p></div>
+          <span class="chip visa">${escapeHtml((STATUSES.find((s) => s[0] === a.status) || [a.status, a.status])[1])}</span></div>
+        <p class="meta">Applied ${escapeHtml(a.appliedAt || "—")} · ${escapeHtml(a.recruiter || "")}</p>
+        <div class="actions"><button class="btn btn-secondary open" data-id="${job.id}">Open</button></div>
+      </article>`;
+    }).join("")}</div>`;
 }
 
 function profilePage() {
   const p = state.profile;
-  const csv = (a) => (a || []).join(", ");
-  return `<header><h1>Profile & preferences</h1><p class="lede">Matching uses this object only. Edits rescore every job. The public site never stores your resume file, phone, or email.</p></header>
-    <form class="card form-grid" id="profile-form">
-      <label>Name<input name="name" value="${escapeHtml(p.name)}" /></label>
-      <label>Headline<input name="headline" value="${escapeHtml(p.headline)}" /></label>
-      <div class="form-grid two">
-        <label>Years of experience<input name="yearsExperience" type="number" value="${p.yearsExperience}" /></label>
+  return `<header><h1>Profile</h1><p class="lede">Used only for scoring. Nothing is uploaded.</p></header>
+    <form id="profile-form" class="filters">
+      <div class="row two">
+        <label>Name<input name="name" value="${escapeHtml(p.name)}" /></label>
+        <label>Headline<input name="headline" value="${escapeHtml(p.headline)}" /></label>
+        <label>Years experience<input name="yearsExperience" type="number" min="0" value="${p.yearsExperience}" /></label>
         <label>Location<input name="location" value="${escapeHtml(p.location)}" /></label>
       </div>
-      <label>Skills<textarea name="skills" rows="3">${escapeHtml(csv(p.skills))}</textarea></label>
-      <label>Preferred job titles<textarea name="preferredTitles" rows="3">${escapeHtml(csv(p.preferredTitles))}</textarea></label>
-      <label>Preferred technologies<textarea name="preferredTechnologies" rows="2">${escapeHtml(csv(p.preferredTechnologies))}</textarea></label>
-      <label>Preferred industries<textarea name="preferredIndustries" rows="2">${escapeHtml(csv(p.preferredIndustries))}</textarea></label>
-      <label>Preferred countries<textarea name="preferredCountries" rows="2">${escapeHtml(csv(p.preferredCountries))}</textarea></label>
-      <div class="form-grid two">
+      <label>Skills (comma-separated)<input name="skills" value="${escapeHtml((p.skills || []).join(", "))}" /></label>
+      <label>Preferred titles<input name="preferredTitles" value="${escapeHtml((p.preferredTitles || []).join(", "))}" /></label>
+      <label>Preferred technologies<input name="preferredTechnologies" value="${escapeHtml((p.preferredTechnologies || []).join(", "))}" /></label>
+      <label>Preferred industries<input name="preferredIndustries" value="${escapeHtml((p.preferredIndustries || []).join(", "))}" /></label>
+      <label>Preferred countries<input name="preferredCountries" value="${escapeHtml((p.preferredCountries || []).join(", "))}" /></label>
+      <div class="row two">
         <label>Remote preference<select name="remotePreference">
-          ${["any","remote","hybrid","onsite"].map((v) => `<option ${p.remotePreference===v?"selected":""} value="${v}">${v}</option>`).join("")}
+          <option value="any" ${p.remotePreference==="any"?"selected":""}>Any</option>
+          <option value="remote" ${p.remotePreference==="remote"?"selected":""}>Prefer remote</option>
+          <option value="hybrid" ${p.remotePreference==="hybrid"?"selected":""}>Prefer hybrid</option>
         </select></label>
         <label>Visa preference<select name="visaPreference">
           <option value="sponsorship" ${p.visaPreference==="sponsorship"?"selected":""}>Prefer sponsorship</option>
@@ -463,35 +463,37 @@ function openModal(job) {
       interviewAt: document.getElementById("m-int").value,
       resumeVersion: document.getElementById("m-resume").value,
       coverLetter: document.getElementById("m-cover").value,
-      updatedAt: new Date().toISOString(),
     };
     saveStore();
   };
-  modal.querySelectorAll("input,select,textarea").forEach((n) => n.addEventListener("change", persist));
-  document.getElementById("m-save").onclick = () => { toggleSave(job.id); openModal(scoreJob(job, state.profile)); };
+  ["m-status","m-applied","m-rec","m-email","m-follow","m-int","m-resume","m-notes","m-cover"].forEach((id) => {
+    const n = document.getElementById(id);
+    if (n) n.onchange = n.oninput = persist;
+  });
+  document.getElementById("m-save").onclick = () => { toggleSave(job.id); openModal(job); };
   document.getElementById("m-applied-btn").onclick = () => {
     document.getElementById("m-status").value = "applied";
-    if (!document.getElementById("m-applied").value) document.getElementById("m-applied").value = new Date().toISOString().slice(0,10);
-    persist(); render();
+    if (!document.getElementById("m-applied").value) document.getElementById("m-applied").value = new Date().toISOString().slice(0, 10);
+    persist();
+    openModal(job);
   };
-  document.getElementById("m-skip").onclick = () => { skip(job.id); closeModal(); render(); };
+  document.getElementById("m-skip").onclick = () => {
+    if (!state.skipped.includes(job.id)) state.skipped.push(job.id);
+    saveStore();
+    closeModal();
+    render();
+  };
 }
-
 function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
   state.selected = null;
-  const modal = document.getElementById("modal");
-  modal.classList.add("hidden");
-  modal.innerHTML = "";
 }
 function toggleSave(id) {
-  state.saved = state.saved.includes(id) ? state.saved.filter((x) => x !== id) : [...state.saved, id];
+  const i = state.saved.indexOf(id);
+  if (i >= 0) state.saved.splice(i, 1);
+  else state.saved.push(id);
   saveStore();
   render();
-}
-function skip(id) {
-  if (!state.skipped.includes(id)) state.skipped.push(id);
-  state.applications[id] = { ...(state.applications[id] || {}), jobId: id, status: "skipped", updatedAt: new Date().toISOString() };
-  saveStore();
 }
 
 function bindCards(root) {
