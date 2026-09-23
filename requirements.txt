@@ -1,0 +1,5 @@
+ats-scrapers[parquet]
+openpyxl
+httpx
+pyarrow
+pandas
