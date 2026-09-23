@@ -1,1 +1,99 @@
-placeholder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Software Jobs Board | Madhuri Varanasi</title>
+  <meta name="description" content="Browse recent software engineering, .NET, Angular, and AI jobs. Search, filter, and track applications." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo">
+        <span class="logo-mark">◆</span>
+        <div>
+          <h1>Software Jobs Board</h1>
+          <p class="tagline">.NET · Angular · Full-Stack · AI · Recent openings</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <button id="btn-all" class="nav-btn active">All Jobs</button>
+        <button id="btn-applied" class="nav-btn">My Applied</button>
+        <button id="btn-login" class="nav-btn secondary">Account</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <div class="search-row">
+        <input type="search" id="search" placeholder="Search title, company, location, skills..." autocomplete="off" />
+        <button id="btn-clear" class="btn-ghost" title="Clear filters">Clear</button>
+      </div>
+      <div class="filters">
+        <select id="filter-remote">
+          <option value="">Remote: Any</option>
+          <option value="Yes">Remote: Yes</option>
+          <option value="No">Remote: No</option>
+        </select>
+        <select id="filter-visa">
+          <option value="">Visa: Any</option>
+          <option value="Yes / Mentioned">Visa: Yes / Mentioned</option>
+          <option value="No">Visa: No</option>
+          <option value="Not mentioned">Visa: Not mentioned</option>
+        </select>
+        <select id="filter-country">
+          <option value="">Country: Any</option>
+        </select>
+        <select id="sort-by">
+          <option value="date-desc">Newest first</option>
+          <option value="date-asc">Oldest first</option>
+          <option value="company">Company A–Z</option>
+          <option value="title">Title A–Z</option>
+        </select>
+      </div>
+      <p class="meta" id="meta">Loading jobs…</p>
+    </section>
+
+    <section id="job-list" class="job-list"></section>
+    <p id="empty" class="empty hidden">No jobs match your filters.</p>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div id="account-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close-account></div>
+    <div class="modal-panel account-panel">
+      <button class="modal-close" data-close-account aria-label="Close">×</button>
+      <h2>Your Account</h2>
+      <p class="hint">Applied status is stored in this browser under your display name. No server login required for browsing.</p>
+      <label for="user-name">Display name</label>
+      <input type="text" id="user-name" placeholder="e.g. Madhuri" maxlength="40" />
+      <div class="account-actions">
+        <button id="btn-save-account" class="btn-primary">Save</button>
+        <button id="btn-clear-applied" class="btn-ghost">Clear all Applied marks</button>
+      </div>
+      <p id="account-status" class="meta"></p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Jobs auto-updated daily from public ATS sources. Always verify details on the original posting.</p>
+      <p>Built for <a href="https://github.com/madhurivaranasi96" target="_blank" rel="noopener">Madhuri Varanasi</a> · Data refreshed via GitHub Actions</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
