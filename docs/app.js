@@ -77,7 +77,14 @@ function saveStore() {
 }
 
 function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c]));
+  const map = {
+    "&": String.fromCharCode(38) + "amp;",
+    "<": String.fromCharCode(38) + "lt;",
+    ">": String.fromCharCode(38) + "gt;",
+    '"': String.fromCharCode(38) + "quot;",
+    "'": "&#39;",
+  };
+  return String(s ?? "").replace(/[&<>"']/g, (c) => map[c] || c);
 }
 function postedAgo(iso) {
   if (!iso) return "Date unknown";
